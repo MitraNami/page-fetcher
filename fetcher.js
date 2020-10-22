@@ -1,26 +1,36 @@
 const request = require('request');
 const fs = require('fs');
 
-
-const saveFile = function(url, localPath) {
+const pageDownloader = function(url, filePath) {
   request(url, (error, response, body) => {
     if (error) {
-      console.log("URL Erro:", error);
-      return
-    } else if (response.statusCode !== 200) {
-      console.log("Respond Error");
-      return
+      console.log('Error:', error);
+      return;
     }
-    fs.writeFile(localPath, body, 'utf8', (error) => {
-      if (error) {
-        console.log("The path doesn't exist.");
-        return
+    if (response.statusCode !== 200) {
+      console.log('Bad request: ', response.statusCode);
+      return;
+    }
+    fs.stat(filePath, (error, stat) => {
+      if (error === null) {
+        //file exists
+        console.log('File already exists.');
+        return;
       }
-      console.log(`Downloaded and saved ${body.length} bytes to ${localPath}`);
-      
+      if (error.code === 'ENOENT') {
+        //file doesn't exist
+        fs.writeFile(filePath, body, (err) => {
+          if (err) {
+            console.log(err);
+            return;
+          }
+          console.log(`Downloade and save ${body.length} bytes to ${filePath}`);
+        });
+      }
     });
   });
 };
 
+
 const [url, localPath] = process.argv.slice(2);
-saveFile(url,localPath);
+pageDownloader(url,localPath);
